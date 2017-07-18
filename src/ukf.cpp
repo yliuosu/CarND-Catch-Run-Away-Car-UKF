@@ -51,6 +51,22 @@ UKF::UKF() {
 
   Hint: one or more values initialized above might be wildly off...
   */
+  
+  is_initialized_ = false;
+
+  n_x_ = 5;
+
+  n_aug_ = 7;
+  
+  lambda_ = 3 - n_aug_;
+    
+  weights_ = VectorXd(2*n_aug_+1);
+  
+  //define spreading parameter
+  weights_(0) = lambda_ / (lambda_+n_aug_);
+  
+  for(int i=0; i<2*n_aug_; i++) 
+	  weights_(i+1)=1/(2*(lambda_+n_aug_));
 }
 
 UKF::~UKF() {}
