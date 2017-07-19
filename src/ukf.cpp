@@ -82,6 +82,36 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+  
+  if(is_initialized_){
+  
+    //how much time has elapsed
+//    cout << "New T:" << meas_package.timestamp_ << endl;
+//    cout << "Delta T long long:" << meas_package.timestamp_ - time_us_ << endl;
+    double delta_t = double(meas_package.timestamp_ - time_us_) / 1000000;
+    
+    if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_){
+//      cout << "LIDAR" << endl;	
+      //predict
+      Prediction(delta_t);    
+      //constrat with measurement and update
+      UpdateLidar(meas_package);   
+      //update the last timestamp
+      time_us_ = meas_package.timestamp_;
+    }
+    if(meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_){
+//        cout << "RADAR" << endl;
+        //predict
+        Prediction(delta_t);    
+        //constrat with measurement and update
+        UpdateRadar(meas_package);
+        //update the last timestamp
+        time_us_ = meas_package.timestamp_;
+    }
+    
+  }else{
+    
+  } 
 }
 
 /**
