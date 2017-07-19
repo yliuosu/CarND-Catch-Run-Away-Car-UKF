@@ -110,7 +110,40 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     }
     
   }else{
+    //initialise
+    time_us_ = meas_package.timestamp_;
+    //ekf_.x_ << 1, 1, 1, 1;
+    x_ = VectorXd(n_x_);
+       
+    if (meas_package.sensor_type_ == MeasurementPackage::LASER){
+      /**
+      Convert radar from polar to cartesian coordinates and initialize state.
+      */
+      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+	// cout << "Initialize LIDAR" << endl;
+    }else{
+      /**
+      Initialize state.
+      */
+      double rho = meas_package.raw_measurements_[0]; 
+      double theta = meas_package.raw_measurements_[1];
+      double rhod = meas_package.raw_measurements_[2];
+      x_ << rho * cos(theta), rho * sin(theta), rhod, 0, 0;
+	//cout << "Initialize RADAR" << endl;
+    }
+    P_ = MatrixXd(5,5);
+    P_.fill(0.0);
+    P_(0,0)=1;
+    P_(1,1)=1;
+    P_(2,2)=10;
+    P_(3,3)=10;
+    P_(4,4)=10;
+
+	//cout << "Initial x: " << x_ << endl;
+	//cout << "Initial P: " << P_ << endl;
+	//cout << "Initial t: " << time_us_ << endl;
     
+    is_initialized_ = true;
   } 
 }
 
