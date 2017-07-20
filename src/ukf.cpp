@@ -195,7 +195,50 @@ void UKF::Prediction(double delta_t) {
 //    Xsig_aug(3,1 + i) = Normalize(Xsig_aug(3,1 + i));
 //    Xsig_aug(3,1 + n_aug_ + i) = Normalize(Xsig_aug(3,1 + i));
   }
+  
+  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
+  double dt2 = delta_t * delta_t;
+  for(int i = 0; i < 2 * n_aug_ + 1; i++){
+    double px = Xsig_aug(0,i);
+    double py = Xsig_aug(1,i);
+    double v = Xsig_aug(2,i);
+    double yaw = Xsig_aug(3,i);
+    double yr = Xsig_aug(4,i);
+    double v_a = Xsig_aug(5,i);
+    double v_yr = Xsig_aug(6,i);
+    
+    //predict sigma points
+    if(fabs(yr) < 0.001){
+      Xsig_pred_(0,i) = px + v*cos(yaw)*delta_t + 0.5*dt2*cos(yaw)*v_a;
+      Xsig_pred_(1,i) = py + v*sin(yaw)*delta_t + 0.5*dt2*sin(yaw)*v_a;
+    }else{
+      Xsig_pred_(0,i) = px + (v/yr)*(sin(yaw+yr*delta_t)-sin(yaw)) + 0.5*dt2*cos(yaw)*v_a;
+      Xsig_pred_(1,i) = py + (v/yr)*(-cos(yaw+yr*delta_t)+cos(yaw)) + 0.5*dt2*sin(yaw)*v_a;
+    }
+  
+    Xsig_pred_(2,i) = v+delta_t*v_a;
+    Xsig_pred_(3,i) = yaw+yr*delta_t + 0.5 * dt2 * v_yr;
+    Xsig_pred_(4,i) = yr+delta_t*v_yr;
+  }
+
+  //predict state mean
+  x_ = VectorXd(5);
+  x_.fill(0.0);
+  for(int j=0; j<2*n_aug_+1; j++){
+      x_ += weights_(j) * Xsig_pred_.col(j);
+  }
+  
+  //predict state covariance matrix
+  P_ = MatrixXd(5,5);
+  P_.fill(0.0);
+  for(int j=0; j<2*n_aug_+1; j++){
+      VectorXd diff = Xsig_pred_.col(j) - x_;
+      diff(3) = Normalize(diff(3));
+      P_ += weights_(j) * diff * diff.transpose();      
+  }
+
+  return; 
 }
 
 /**
