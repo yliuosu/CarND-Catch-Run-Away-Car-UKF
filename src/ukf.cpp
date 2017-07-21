@@ -241,6 +241,28 @@ void UKF::Prediction(double delta_t) {
   return; 
 }
 
+void UKF::Prediction_chase(double delta_t) {
+  
+  //In making use of the prediction function for long term predictions we are destroying our current estimates... so we back them up before.
+  VectorXd stored_x = x_;
+  MatrixXd stored_P = P_;
+  
+  //make prediction in small steps
+  while(delta_t > 0.1){
+    Prediction(0.1);
+    delta_t -= 0.1;
+  }
+  Prediction(delta_t);
+  
+  //Store the prediction...and restore the estimates
+  predicted_x_ = x_;
+ 
+  x_ = stored_x;
+  P_ = stored_P;
+  
+  return;
+}
+
 /**
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
