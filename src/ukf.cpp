@@ -315,4 +315,54 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the radar NIS.
   */
+  
+  int n_z = 3;
+ 
+  //create matrix for sigma points in measurement space
+  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
+
+  //mean predicted measurement
+  VectorXd z_pred = VectorXd(n_z);
+  
+  //measurement covariance matrix S
+  MatrixXd S = MatrixXd(n_z,n_z);
+
+  z_pred.fill(0.0);
+  S.fill(0.0);
+  S(0,0)=std_radr_*std_radr_;
+  S(1,1)=std_radphi_*std_radphi_;
+  S(2,2)=std_radrd_*std_radrd_;
+  
+  //transform sigma points into measurement space
+  for (int i=0; i<2*n_aug_+1; i++) {  
+    double px = Xsig_pred_(0,i);
+    double py = Xsig_pred_(1,i);
+    double v = Xsig_pred_(2,i);
+    double yaw = Xsig_pred_(3,i);
+    double yr = Xsig_pred_(4,i);
+    
+    double rho = sqrt(px*px+py*py);
+    double psi = atan2(py,px);
+    double rho_d = (px*cos(yaw)*v+py*sin(yaw)*v)/rho;
+    
+    if(fabs(rho) < 0.0001){
+      cout << "Division by zero error" << endl;
+      cin >> rho;
+    }
+    
+    Zsig(0,i)=rho;
+    Zsig(1,i)=psi;
+    Zsig(2,i)=rho_d;
+    
+    z_pred += weights_(i) * Zsig.col(i);
+  }
+
+  //calculate mean predicted measurement
+  //calculate measurement covariance matrix S
+  for (int i=0; i<2*n_aug_+1; i++) {  
+      VectorXd residual = Zsig.col(i)-z_pred;
+      residual(1) = Normalize(residual(1));    
+      S+= weights_(i)* residual * residual.transpose();
+  }
+
 }
